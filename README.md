@@ -1,2 +1,2 @@
 # certor
-A Reverse Proxy with SSL End-To-End encryption using Letsencrypt
+A Webservice that handles Letencrypt Certificate Requests via DNS

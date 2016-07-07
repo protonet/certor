@@ -1,3 +1,3 @@
-require ::File.expand_path('../app/certor', __FILE__)
+require_relative 'app/certor_controller'
 
 run CertorController

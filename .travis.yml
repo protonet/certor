@@ -1,0 +1,5 @@
+language: ruby
+dist: trusty
+
+script:
+    - ruby test/test_certor_controller.rb 

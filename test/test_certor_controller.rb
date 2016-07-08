@@ -8,8 +8,8 @@ class TestCertorController < Test::Unit::TestCase
       @gets = _gets
     end
   end
-  def test_action_create
-    res = CertorController.action_create({
+  def test_action_post
+    res = CertorController.action_post({
       "REQUEST_METHOD" => "POST",
       "CONTENT_TYPE" => "application/json",
       "rack.input" => RackInput.new(JSON.generate({"Hello"=>"World"}))

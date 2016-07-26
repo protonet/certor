@@ -2,8 +2,19 @@ require 'ostruct'
 require 'json'
 require 'tempfile'
 require 'base64'
+require 'shellwords'
 
 class CertorController
+
+  def self.get_subject(path)
+    out = %x( ls -l #{path} )
+    %x( openssl req -subject -noout -in #{Shellwords.escape(path)} ).lines.each do |line|
+      if line.strip =~ /^subject=\/CN=(.*)$/
+        return $1
+      end
+    end
+    return ""
+  end
 
   # http://www.restapitutorial.com/lessons/httpmethods.html
   # curl -H 'Content-Type: application/json' -d '{"meno":4}' -X POST -v http://localhost:9292/
@@ -14,28 +25,42 @@ class CertorController
     res = { "req" => JSON.parse(body) }
     # The CSR is base64 encoded inside the json
     # Restore the original CSR to a Tempfile
+    #puts ">>>>#{res['req']['csr']}<<<<"
     csr = Tempfile.new(res['req']['hostname'])
-    plain = Base64.decode64(res['req']['csr'])
-    csr.write("#{plain}")
+    csr.write(res['req']['csr'])
     csr.close
     # Want to see if the CSR matches the Hostname
-    # TODO: Put this in a function
-    csr_subject = %x( openssl req -subject -noout -in '#{csr.path}' | sed -n '/^subject/s/^.*CN=//p' ).delete!("\n")
-    if csr_subject.to_s == res['req']['hostname'] then
-      puts 'Congrats! Your Domainname matches the CSR Subject'
-    else
-      raise ("CSR Subject #{csr_subject.inspect} does not match hostname #{res['req']['hostname'].inspect}")
+    unless get_subject(csr.path) == res['req']['hostname']
+      return [500, {
+        'Content-Type' => 'application/json'
+      }, [
+        {"error" => "CSR Subject #{get_subject(csr.path)} does not match hostname #{res['req']['hostname']}"}.to_json
+        ]
+      ]
     end
     # TODO: Have a function to send signed request to the acme-api for getting the Challenge Token
     #puts %x( env )
     #puts %x( pwd )
-    cert = %x( ./letsencrypt/letsencrypt.sh --signcsr #{csr.path} --challenge dns-01 --domain #{res['req']['hostname']} --hook ./manual_hook.rb )
+    # staging CA="https://acme-staging.api.letsencrypt.org/directory"
+    cert = %x( ./letsencrypt/letsencrypt.sh --signcsr #{csr.path} --challenge dns-01 --domain #{res['req']['hostname']} --hook ./manual_hook.rb 2>&1 )
+    unless $? == 0
+      return [500, {
+        'Content-Type' => 'application/json'
+      }, [
+        {"error" => "got an error:#{cert}"}
+        ]
+      ]
+    end
     #puts cert.inspect
     # Cleanup
     csr.unlink
     [200, {
-      'Content-Type' => 'text'
-    }, [cert.inspect]]
+      'Content-Type' => 'application/json'
+    }, [{
+      "hostname" => res['req']['hostname'],
+      "csr" => res['req']['csr'],
+      "cert" => cert
+    }.to_json]]
   end
 
   def self.action_delete(req)

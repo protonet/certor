@@ -3,4 +3,6 @@ dist: trusty
 
 script:
     - rvm use ruby-2.0.0-p598
-    - ruby test/test_certor_controller.rb 
+    - ruby test/test_certor_controller.rb
+
+slack: advisercom:42V4oPJnrj3Yg7aXUf6pwnBX

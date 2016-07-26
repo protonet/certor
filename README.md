@@ -14,10 +14,13 @@ A Webservice that handles Letencrypt Certificate Requests via DNS
 **Openssl**
 > sudo apt-get install openssl
 
+**nsupdate**
+> sudo apt-get install dnsutils
+
 **Letsencrypt.sh** 
+
 Website: https://github.com/lukas2511/letsencrypt.sh
 > git clone https://github.com/lukas2511/letsencrypt.sh.git letsencrypt/
-> git clone https://github.com/jbjonesjr/letsencrypt-manual-hook.git letsencrypt/hooks/manual/
 
 **account.key** 
 > openssl genrsa 4096 > assets/account.key

@@ -27,12 +27,15 @@ class CertorController
       raise ("CSR Subject #{csr_subject.inspect} does not match hostname #{res['req']['hostname'].inspect}")
     end
     # TODO: Have a function to send signed request to the acme-api for getting the Challenge Token
-
+    #puts %x( env )
+    #puts %x( pwd )
+    cert = %x( ./letsencrypt/letsencrypt.sh --signcsr #{csr.path} --challenge dns-01 --domain #{res['req']['hostname']} --hook ./manual_hook.rb )
+    #puts cert.inspect
     # Cleanup
     csr.unlink
     [200, {
-      'Content-Type' => 'application/json'
-    }, [JSON.generate(res)]]
+      'Content-Type' => 'text'
+    }, [cert.inspect]]
   end
 
   def self.action_delete(req)

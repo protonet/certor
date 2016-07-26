@@ -6,8 +6,6 @@ require 'tempfile'
 def setup_dns(domain, txt_challenge)
   dns = Resolv::DNS.new;
   acme_domain = "_acme-challenge."+domain;
-  # Create output directory for the certs
-  Dir.mkdir "certs/#{domain}"
 
   # Create nsupdate_create tempfile
   nsupdate_create = Tempfile.new('nsupdate_create')
@@ -20,7 +18,7 @@ def setup_dns(domain, txt_challenge)
   # Execute nsupdate
   dnskey = 'geilerserver.com.key:"MVptZHq85/irKhnJI+vxm4B6UX1T7NGw0IH2HhvUTBlDE7MVDOutK74E md9lTzmts6ux87uFtEPqVLABo3fkcA=="'
   %x( /usr/bin/nsupdate -y #{dnskey} -v #{nsupdate_create.path})
-
+  nsupdate_create.unlink
   resolved = false;
   until resolved
     dns.each_resource(acme_domain, Resolv::DNS::Resource::IN::TXT) { |resp|
@@ -47,6 +45,7 @@ def delete_dns(domain, txt_challenge)
   # Execute nsupdate
   dnskey = 'geilerserver.com.key:"MVptZHq85/irKhnJI+vxm4B6UX1T7NGw0IH2HhvUTBlDE7MVDOutK74E md9lTzmts6ux87uFtEPqVLABo3fkcA=="'
   %x( /usr/bin/nsupdate -y #{dnskey} -v #{nsupdate_delete.path})
+  nsupdate_delete.unlink
 end
 
 if __FILE__ == $0

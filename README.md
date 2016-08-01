@@ -11,19 +11,19 @@ A Webservice that handles Letencrypt Certificate Requests via DNS
 **Openssl**  
 > sudo apt-get install openssl
 
-**Nsupdate**
+**Nsupdate**  
 > sudo apt-get install dnsutils
 
-**Ruby**
+**Ruby**  
 > sudo apt-get install ruby ruby-dev build-essential
 
-**Bundle**
+**Bundle**  
 > sudo gem install bundle
 
-**Git**
+**Git**  
 > sudo apt-get install git
 
-**Letsencrypt.sh**
+**Letsencrypt.sh**  
 Website: https://github.com/lukas2511/letsencrypt.sh
 > git clone https://github.com/lukas2511/letsencrypt.sh.git letsencrypt/
 
@@ -42,8 +42,6 @@ Continue as root
 > systemctl enable certor.service
 > systemctl start certor
 
-
-#### Server Installation
 
 > adduser certor  
 Continue as this user  

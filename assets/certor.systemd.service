@@ -1,0 +1,14 @@
+[Unit]
+Description=Certor (Puma Ruby HTTP Server)
+
+[Service]
+Type=simple
+User=certor
+WorkingDirectory=/opt/certor
+ExecStart=/usr/local/bin/pumactl start
+ExecStop=/usr/local/bin/pumactl stop
+RemainAfterExit=yes
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

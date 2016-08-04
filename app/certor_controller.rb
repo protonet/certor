@@ -47,7 +47,7 @@ class CertorController
       return [500, {
         'Content-Type' => 'application/json'
       }, [
-        {"error" => "got an error:#{cert}"}
+        {"error" => "got an error:#{cert}"}.to_json
         ]
       ]
     end

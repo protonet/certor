@@ -3,6 +3,11 @@ require 'json'
 require 'tempfile'
 require 'base64'
 require 'shellwords'
+require_relative '../config.rb'
+
+# Load the config
+conf = Config.new('config.yml')
+puts conf.dns
 
 class CertorController
 

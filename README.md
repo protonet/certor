@@ -6,6 +6,8 @@ A Webservice that handles Letencrypt Certificate Requests via DNS
 
 ## installation
 
+Just execute start.sh in order to have a working local certor 
+
 #### Prerequisites
 
 **Openssl**  

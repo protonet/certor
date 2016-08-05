@@ -10,7 +10,6 @@ dns:
   host : ns1.geilerserver.com
 YAML
 
-
   def test_dns_config
     cfg = Config.from_string(YAML)
     assert_equal(cfg.dns.domain, "geilerserver.com")

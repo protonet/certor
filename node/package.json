@@ -40,7 +40,8 @@
     "source-map-support": ">=0.4.1",
     "tslint": ">=3.11.0",
     "typescript": "2.1.1",
-    "webpack": ">=1.14.0"
+    "webpack": ">=1.14.0",
+    "globby": ">=5.0.0"
   },
   "dependencies": {
     "@types/node-uuid": ">=0.0.28",

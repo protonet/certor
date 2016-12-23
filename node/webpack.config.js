@@ -1,13 +1,13 @@
 const fs = require('fs');
 const node_modules = fs.readdirSync('node_modules').filter(x => x !== '.bin');
-//const globby = require('globby');
+const globby = require('globby');
 
 
-//fs.writeFileSync('test/all.ts',
-//  globby.sync(['test/**/*-test.ts', 'test/**/*-test.tsx'])
-//    .map(file => file.replace('test/', '').replace(/\.tsx?$/, ''))
-//    .map(file => `import './${file}';`)
-//    .join('\n'));
+fs.writeFileSync('test/all.ts',
+ globby.sync(['test/**/*-test.ts', 'test/**/*-test.tsx'])
+   .map(file => file.replace('test/', '').replace(/\.tsx?$/, ''))
+   .map(file => `import './${file}';`)
+   .join('\n'));
 
 module.exports = [
   {

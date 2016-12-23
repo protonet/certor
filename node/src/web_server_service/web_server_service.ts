@@ -4,7 +4,7 @@ import * as fs from 'fs'
 import * as http from 'http'
 import * as https from 'https'
 
-import WebConfig from './web_config'
+import * as config from '../certor_config'
 import WebActor from './web_actor'
 
 import * as cert from './cert'
@@ -19,7 +19,7 @@ class WebServiceServer implements Command {
  
   webActors: {[id:string]: WebActor } = {}
 
-  private redirectServer(cfg: WebConfig) {
+  private redirectServer(cfg: config.Certor) {
     let srv = http.createServer((request, response) => {
       response.writeHead(302, {
         "Content-Type": "text/plain",
@@ -32,7 +32,7 @@ class WebServiceServer implements Command {
   }
 
   public start(argv: string[]) {
-    let cfg = WebConfig.create(argv)
+    let cfg = config.Certor.create(argv)
     if (cfg.redirectPort > 0) {
       this.redirectServer(cfg);
     }    
@@ -56,7 +56,7 @@ class WebServiceServer implements Command {
     }
   }
 
-  private serviceServer(cfg: WebConfig) {
+  private serviceServer(cfg: config.Certor) {
     let httpServer : https.Server | http.Server;
     if (cfg.privateKey) {
       httpServer = https.createServer(cfg.credentials());

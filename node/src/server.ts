@@ -7,6 +7,7 @@ import CertReaper from './cert_reaper'
 import DepotsReaper from './depots_reaper'
 import DepotMonitor from './depot_monitor'
 import Certor from './certor'
+import DomainFilter from './domain_filter'
 
 import Commander from './commander'
 
@@ -18,6 +19,7 @@ cmd.register(new CertReaper())
 cmd.register(new DepotsReaper())
 cmd.register(new DepotMonitor())
 cmd.register(new Certor())
+cmd.register(new DomainFilter())
 
-cmd.dispatch(process.argv)
+cmd.dispatch(process.argv, null)
 

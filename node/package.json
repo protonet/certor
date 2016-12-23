@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@types/node-uuid": ">=0.0.28",
+    "node-etcd": ">=5.0.3",
     "node-uuid": ">=1.4.7",
     "@types/winston": ">=0.0.32",
     "winston": ">=2.2.0"

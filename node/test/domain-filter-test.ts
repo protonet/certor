@@ -2,11 +2,13 @@
 import { assert } from 'chai';
 //import { describe, it } from 'mocha';
 
-import {spawn} from 'child_process'
+import * as cp from 'child_process'
+import * as fs from 'fs'
 
-import * as Uuid from 'node-uuid';
+import * as Uuid from 'node-uuid'
 
 import DomainFilter from '../src/domain_filter'
+import * as config from '../src/certor_config'
 
 // grep.on('close', (code, signal) => {
 //   console.log(
@@ -15,88 +17,87 @@ import DomainFilter from '../src/domain_filter'
 // // Send SIGHUP to process
 // grep.kill('SIGHUP');
 
-function Etcd() {
-  let etcd = spawn('etcd')
-  etcd.on('error', (err) => {
-    assert.fail("can't spawn etcd")
-  });
-  etcd.stdin.on('data', (res: string) => {
-    // console.log(">>"+res+"<<")
-  })
-  etcd.stderr.on('data', (res: string) => {
-    // console.log(">>"+res+"<<")
-  })
-  return etcd;
+class EtcdDaemon {
+  etcd: cp.ChildProcess
+  etcdir: string
+  public kill() {
+    this.etcd.kill('SIGTERM')
+    console.log("KILL:", this.etcdir)
+    cp.spawn("rm", ["-r", this.etcdir])
+  }
+  public static start() : EtcdDaemon {
+    let ret = new EtcdDaemon();
+    ret.etcdir = fs.mkdtempSync("certor-test-")
+    console.log("CREATED:", ret.etcdir)
+    ret.etcd = cp.spawn('etcd', ['--data-dir', ret.etcdir])
+    ret.etcd.on('error', (err) => {
+      assert.fail("can't spawn etcd")
+    });
+    ret.etcd.stdin.on('data', (res: string) => {
+      // console.log(">>"+res+"<<")
+    })
+    ret.etcd.stderr.on('data', (res: string) => {
+      // console.log(">>"+res+"<<")
+    })
+    // WAIT FOR started
+    return ret;
+  }
 }
 
 function param(arr: string[], uuid: string) : string[] {
-  return arr.concat(['--cluster-id', uuid, '--etcd-url', "http://localhost:2379"])
+  return arr.concat(['--etcd-cluster-id', uuid, '--etcd-url', "http://localhost:2379"])
 }
 
+// function mochaAsync(fn : () => void ) : (done:any) => void {
+//     return async (done: () => void) : Promise<any> => {
+//         try {
+//             await fn();
+//             done();
+//         } catch (err) {
+//             done();
+//         }
+//         return Promise.resolve()
+//     };
+// };
+
 describe("domain-filter", () => {
-  it("get", (done: any) => {
-    let etcd = Etcd()
-    let uuid = Uuid.v4().toString()
-    let df = new DomainFilter();
-    df.start(param(['get'], uuid), (err, res) => {
-      assert.equal(err, null)
-      assert.equal(res, null)
-      df.start(param(['add', 'meno'], uuid), (err, res) => {
-        assert.equal(err, null)
-        assert.deepEqual(res, ['meno'])
-        df.start(param(['get'], uuid), (err, res) => {
-          assert.equal(err, null)
-          assert.deepEqual(res, ['meno'])
-          etcd.kill('SIGTERM')
-          done()
-        })
-      })
-    })
+  let etcd : EtcdDaemon
+  before(() => {
+    etcd = EtcdDaemon.start()
   })
-  it("add", (done: any) => {
-    let etcd = Etcd()
-    let df = new DomainFilter();
-    let uuid = Uuid.v4().toString()
-    df.start(param(['add', 'meno'], uuid), (err, res) => {
-      assert.equal(err, null)
-      assert.deepEqual(res, ['meno'])
-      df.start(param(['add', 'meno'], uuid), (err, res) => {
-        assert.equal(err, null)
-        assert.deepEqual(res, ['meno'])
-        df.start(param(['add', 'murks'], uuid), (err, res) => {
-          assert.equal(err, null)
-          assert.deepEqual(res.sort(), ['murks','meno'].sort())
-          df.start(param(['get'], uuid), (err, res) => {
-            assert.equal(err, null)
-            assert.deepEqual(res.sort(), ['murks','meno'].sort())
-            etcd.kill('SIGTERM')
-            done()
-          })
-        })
-      })
-    })
+  after(() => {
+    etcd.kill() 
   })
-  it("del", (done: any) => {
-    let etcd = Etcd()
+  it("get", async () => {
+    let uuid = Uuid.v4().toString();
     let df = new DomainFilter();
-    let uuid = Uuid.v4().toString()
-    df.start(param(['del', 'meno'], uuid), (err, res) => {
-      assert.equal(err, null)
-      assert.deepEqual(res, [])
-      df.start(param(['add', 'meno'], uuid), (err, res) => {
-        assert.equal(err, null)
-        assert.deepEqual(res, ['meno'])
-        df.start(param(['del', 'meno'], uuid), (err, res) => {
-          assert.equal(err, null)
-          assert.deepEqual(res, [], "was")
-          df.start(param(['get'], uuid), (err, res) => {
-            assert.equal(err, null)
-            assert.deepEqual(res, [], "wo")
-            done()
-          })
-        })
-      })
-    })
+    let wc = config.Certor.create(param([], uuid))
+    let etcd = await wc.etcd();
+    assert.deepEqual([], await df.start(param(['get'], uuid), etcd))
+    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "add Error")
+    assert.deepEqual(['meno'], await df.start(param(['get'], uuid), etcd), "get Error")
+  })
+  it("add", async () => {
+    let uuid = Uuid.v4().toString();
+    let df = new DomainFilter();
+    let wc = config.Certor.create(param([], uuid))
+    let etcd = await wc.etcd();
+    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "first add Error")
+    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "second add Error")
+    assert.deepEqual(['meno', 'murk'], (await df.start(param(['add', 'murk'], uuid), etcd)).sort(), "murk add Error")
+    assert.deepEqual(['meno', 'murk'], (await df.start(param(['get'], uuid), etcd)).sort(), "get-x Error")
+  })
+
+   it("del", async () => {
+    let uuid = Uuid.v4().toString();
+    let df = new DomainFilter();
+    let wc = config.Certor.create(param([], uuid))
+    let etcd = await wc.etcd();
+    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "first add Error")
+    assert.deepEqual(['meno', 'murk'], (await df.start(param(['add', 'murk'], uuid), etcd)).sort(), "murk add Error")
+    assert.deepEqual(['murk'], (await df.start(param(['del', 'meno'], uuid), etcd)).sort(), "get Error")
+    assert.deepEqual([], (await df.start(param(['del', 'murk'], uuid), etcd)).sort(), "get Error")
+    assert.deepEqual([], await df.start(param(['get'], uuid), etcd))
   })
 })
 

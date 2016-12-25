@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import * as Etcd from 'node-etcd';
+import * as etcd from './etcd'
 
 class Key {
   ca: string = null;
@@ -11,49 +11,6 @@ class Key {
       return this
     }
     return null;
-  }
-}
-
-export class EtcdHelper {
-  etcd: Etcd
-  cfg: Certor
-  constructor(cfg: Certor) {
-    this.cfg = cfg
-  }
-  public static create(cfg: Certor, cb: (etcdh: EtcdHelper)=>void) : void {
-    let etcdh = new EtcdHelper(cfg)
-    let connStr : string;
-    if (cfg.client.isSet()) {
-      connStr = `etcd:TLS:${cfg.etcd_urls}`
-      etcdh.etcd = new Etcd(cfg.etcd_urls, cfg.client)
-    } else {
-      connStr = `etcd:${cfg.etcd_urls}`
-      etcdh.etcd = new Etcd(cfg.etcd_urls)
-    }
-    etcdh.etcd.selfStats((err, res) => {
-        if (err) {
-          console.error("Failed to create: etcd")
-          cb(null);
-          return
-        }
-        // console.log(err, res)
-        console.log(`OK:${res.name} ${connStr} leader is: ${res['leaderInfo']['leader']} `)
-        cb(etcdh)
-    })
-  }
-  public build_url(key :string) : string {
-    let url = `/certor/${key}`
-    if (this.cfg.clusterId) {
-      url = `/certor/${this.cfg.clusterId}/${key}`
-    }
-    return url
-  }
-
-  public get(key :string, cb: (err: any, res:string)=>void) {
-    this.etcd.get(this.build_url(key), cb);
-  }
-  public set(key :string, val: string, cb: (err: any, res:string)=>void) {
-    this.etcd.set(this.build_url(key), val, cb)
   }
 }
 
@@ -71,7 +28,7 @@ export class Certor {
 
   client: Key = new Key()
 
-  etcd_urls: string[] = []
+  etcdConfig: etcd.Config
 
   public credentials() {
     if (this.privateKey && this.certificate) {
@@ -80,14 +37,14 @@ export class Certor {
     return null;
   }
 
-  public etcd(cb: (etcdh: EtcdHelper)=> void) {
-    return EtcdHelper.create(this, cb)
+  public async etcd() {
+    return etcd.Etcd.create(this.etcdConfig)
    }
 
   public static create(argv: string[]) : Certor {
     let wc = new Certor();
     let ofs = argv.indexOf("--privkey")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.privateKey = argv[ofs+1]
     } else {
       try {
@@ -96,7 +53,7 @@ export class Certor {
       }
     }
     ofs = argv.indexOf("--cerifcate")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.certificate = argv[ofs+1]
     } else {
       try {
@@ -105,7 +62,7 @@ export class Certor {
       }
     }
     ofs = argv.indexOf("--redirect-port")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.redirectPort = ~~argv[ofs+1]
     } else {
       if (process.getuid() == 0) {
@@ -113,7 +70,7 @@ export class Certor {
       }
     }
     ofs = argv.indexOf("--application-port")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.applicationPort = ~~argv[ofs+1]
     } else {
       if (process.getuid() == 0) {
@@ -121,33 +78,27 @@ export class Certor {
       }
     }
     ofs = argv.indexOf("--redirect-url")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.redirectUrl = argv[ofs + 1]
-    }
-    ofs = argv.indexOf("--cluster-id")
-    if (ofs > 0) {
-      wc.clusterId = argv[ofs + 1]
     }
 
     ofs = argv.indexOf("--client-ca")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.client.ca = fs.readFileSync(argv[ofs + 1]).toString()
     }
 
     ofs = argv.indexOf("--client-cert")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.client.cert = fs.readFileSync(argv[ofs + 1]).toString()
     }
 
     ofs = argv.indexOf("--client-key")
-    if (ofs > 0) {
+    if (ofs >= 0) {
       wc.client.key = fs.readFileSync(argv[ofs + 1]).toString()
     }
 
-    for(ofs = argv.indexOf("--etcd-url"); ofs >= 0; ofs = argv.indexOf("--etcd-url", ofs+1)) {
-      wc.etcd_urls.push(argv[ofs + 1])
-    }
-
+    wc.etcdConfig = etcd.Config.start(argv, "certor")
+ 
     return wc
  }
 

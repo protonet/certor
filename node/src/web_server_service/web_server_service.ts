@@ -31,13 +31,14 @@ class WebServiceServer implements Command {
     console.log(`Started redirectPort on ${cfg.redirectPort} -> ${cfg.redirectUrl}`)
   }
 
-  public start(argv: string[]) {
+  public start(argv: string[]) : Promise<any> {
     let cfg = config.Certor.create(argv)
     if (cfg.redirectPort > 0) {
       this.redirectServer(cfg);
     }    
 
     this.serviceServer(cfg);
+    return null
   }
 
   private register(wa: WebActor) {

@@ -13,7 +13,7 @@ export class Commander {
           ('a' <= arg[0] && arg[0] <= 'z')) {
         this.commands.forEach((cmd) => {
           if (cmd.key == arg) {
-            cmd.start(argv, cb)
+            cmd.start(argv)
           }
         })
       }  

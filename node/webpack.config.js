@@ -21,8 +21,8 @@ module.exports = [
   module: {
     loaders: [
       {
-        test: /\.tsx?$/,
-        loader: 'awesome-typescript?useBabel=true'
+        test: /\.ts$/,
+        loader: 'ts-loader'
       }
     ]
   },
@@ -42,14 +42,14 @@ module.exports = [
   module: {
     loaders: [
       {
-        test: /\.tsx?$/,
-        loader: 'awesome-typescript?useBabel=true'
+        test: /\.ts$/,
+        loader: 'ts-loader'
       }
     ]
   },
   externals: node_modules,
   devtool: 'source-map',
   resolve: {
-    extensions: ['', '.tsx', '.ts', '.webpack.js', '.web.js', '.js']
+    extensions: ['', '.ts', '.webpack.js', '.web.js', '.js']
   }
 }];

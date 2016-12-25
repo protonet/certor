@@ -1,5 +1,5 @@
 export interface Command {
   key: string
-  start(argv: string[], cb: (err:string, res: string)=>void) : void
+  start(argv: string[]) : Promise<any>
 }
 export default Command

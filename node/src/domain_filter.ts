@@ -1,81 +1,86 @@
 import Command from './command'
 import * as config from './certor_config'
 
+import * as request from 'request-promise'
+
+import Etcd from './etcd'
+
 export class DomainFilter implements Command {
   key : string = "domain-filter"
 
-  private get(etcd: config.EtcdHelper, cb: (arr: string[])=>void) {
-    etcd.get("domains.filter", (err, res: any) => {
-      if (err) {
-        console.error("No domain filters found")
-        cb(null)
-        return;
-      }
-      // console.log(">>>>>>", err, res)
-      cb(JSON.parse(res['node']['value']))
-    })
-  }
-  private set(etcd: config.EtcdHelper, arr: string[], cb: (arr: string[])=>void) {
-    etcd.set("domains.filter", JSON.stringify(arr), (err,res) => {
-      if (err) {
-        console.error("domains.filter is not writable", err)
-        cb(null)
-        return
-      }
-      cb(arr)
-    })
-  }
-  private modify(etcd: config.EtcdHelper,
-      handler: (arr: string[]) => string[],
-      cb:(err:string, res:any) => void) : void {
-    this.get(etcd, (arr: string[]) => {
-      arr = arr || []
-      let post = handler(arr)
-      if (post) {
-        this.set(etcd, post, (arr: string[]) => {
-          arr && arr.forEach((domain:string) => console.log(domain))
-        })
+  private async get(etcd: Etcd) {
+    try {
+      let ret = await etcd.get("domains.filter")
+      if (ret['node']) {
+        // console.log(">>>>>NODE:", ret['node'])
+        return Promise.resolve(JSON.parse(ret['node']['value']))
       } else {
-        arr.forEach((domain:string) => console.log(domain))
+        // console.log(">>>>>EMPTY:", ret['node'])
+        return Promise.resolve([])
       }
-      cb && cb(null, post || arr)
-    })
+    } catch (e) {
+      return Promise.reject(e) 
+    }
+  }
+  private async set(etcd: Etcd, arr: string[]) : Promise<string[]> {
+    try {
+      await etcd.set("domains.filter", JSON.stringify(arr));
+      return Promise.resolve(arr)
+    } catch (err) {
+      return Promise.resolve(null)
+    }
+  }
+  private async modify(etcd: Etcd, handler: (arr: string[])=>string[]) : Promise<string[]> {
+    let arr = await this.get(etcd)
+    // console.log("MODIFY:", arr)
+    arr = arr || []
+    let post = handler(arr)
+    if (post) {
+      post = await this.set(etcd, post) 
+    }
+    return Promise.resolve(post || arr)
   }
 
-  public start(argv: string[], cb: (err:string, res:any)=>void) : void {
+  public async start(argv: string[], etcd: Etcd = null) {
     let wc = config.Certor.create(argv)
-    // console.log("start-0")
-    wc.etcd((etcd) => {
-      // console.log("start-1", argv)
-      let add_ofs = argv.indexOf("add")
-      if (add_ofs >= 0) {
-        this.modify(etcd, (arr: string[]) => {
-          if (!arr.find((l)=>l==argv[add_ofs+1])) {
-            arr.push(argv[add_ofs+1])
-            return arr;
-          }
-          return null;
-        }, cb)
-      }
-      let del_ofs = argv.indexOf("del")
-      if (del_ofs >= 0) {
-         this.modify(etcd, (arr: string[]) => {
+    etcd = etcd || await wc.etcd();
+    // console.log(etcd);
+    // // console.log("start-0")
+    // wc.etcd((etcd) => {
+    //   // console.log("start-1", argv)
+    let add_ofs = argv.indexOf("add")
+    if (add_ofs >= 0) {
+      let arr = await this.modify(etcd, (arr: string[]) => {
+        if (!arr.find((l)=>l==argv[add_ofs+1])) {
+          arr.push(argv[add_ofs+1])
+          // console.log("ADD:", argv[add_ofs+1], arr)
+          return arr;
+        }
+        // console.log("ADD NULL", arr, argv[add_ofs+1])
+        return null;
+      })
+      arr && arr.forEach((domain:any) => console.log(domain))
+      return Promise.resolve(arr)
+    }
+    let del_ofs = argv.indexOf("del")
+    if (del_ofs >= 0) {
+        let arr = await this.modify(etcd, (arr: string[]) => {
           let post = arr.filter((l) => l!=argv[del_ofs+1])
           if (post.length != arr.length) {
             return post;
           }
           return null;
-        }, cb)
-      }
-      if (argv.indexOf("get") >= 0) {
-        // console.log("start-2")
-        this.get(etcd, (arr: string[]) => {
-          // console.log("start-3", arr)
-          arr && arr.forEach((domain:string) => console.log(domain))
-          cb && cb(null, arr)
-       })
-      }
-    })
+      })
+      arr && arr.forEach((domain:any) => console.log(domain))
+      return Promise.resolve(arr)
+    }
+    if (argv.indexOf("get") >= 0) {
+    // console.log("start-2")
+      let arr = await this.get(etcd)
+      arr && arr.forEach((domain:any) => console.log(domain))
+      return Promise.resolve(arr)
+    }
+    return null
   }
 }
 

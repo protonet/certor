@@ -1,6 +1,7 @@
 const fs = require('fs');
 const node_modules = fs.readdirSync('node_modules').filter(x => x !== '.bin');
 const globby = require('globby');
+const path = require('path')
 
 
 fs.writeFileSync('test/all.ts',
@@ -10,7 +11,7 @@ fs.writeFileSync('test/all.ts',
    .join('\n'));
 
 module.exports = [
-  {
+{
   target: 'node',
   entry: './src/server',
   output: {
@@ -31,7 +32,31 @@ module.exports = [
   resolve: {
     extensions: ['', '.ts', '.webpack.js', '.web.js', '.js']
   }
-},{
+},
+{
+  target: 'node',
+  entry: './test/etcd_daemon.ts',
+  output: {
+    filename: './dist/etcd_daemon.js'
+  },
+  module: {
+    loaders: [
+      {
+        test: /etcd_daemon\.ts$/,
+        loader: 'ts-loader'
+      }
+    ],
+    include: [
+      path.resolve(__dirname, "test/etcd_daemon.ts")
+    ]
+  },
+  externals: node_modules,
+  devtool: 'source-map',
+  resolve: {
+    extensions: ['', '.ts']
+  }
+},
+{
   target: 'node',
   entry: './test/all',
   output: {
@@ -44,6 +69,11 @@ module.exports = [
       {
         test: /\.ts$/,
         loader: 'ts-loader'
+      }
+    ],
+    exclude: [
+      {
+        test: /etcd_daemon\.ts$/
       }
     ]
   },

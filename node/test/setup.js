@@ -14,3 +14,5 @@
 // global.navigator = {
 //   userAgent: 'node.js'
 // };
+const EtcDaemon = require('../dist/test').default;
+global.etcd = EtcdDaemon.start()

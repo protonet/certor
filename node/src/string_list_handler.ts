@@ -5,12 +5,14 @@ import * as request from 'request-promise'
 
 import Etcd from './etcd'
 
-export class DomainFilter implements Command {
-  key : string = "domain-filter"
-
+export class StringListHandler implements Command {
+  key: string
+  constructor(key: string) {
+    this.key = key;
+  }
   private async get(etcd: Etcd) {
     try {
-      let ret = await etcd.get("domains.filter")
+      let ret = await etcd.get(this.key)
       if (ret['node']) {
         // console.log(">>>>>NODE:", ret['node'])
         return Promise.resolve(JSON.parse(ret['node']['value']))
@@ -24,7 +26,7 @@ export class DomainFilter implements Command {
   }
   private async set(etcd: Etcd, arr: string[]) : Promise<string[]> {
     try {
-      await etcd.set("domains.filter", JSON.stringify(arr));
+      await etcd.set(this.key, JSON.stringify(arr));
       return Promise.resolve(arr)
     } catch (err) {
       return Promise.resolve(null)
@@ -84,4 +86,4 @@ export class DomainFilter implements Command {
   }
 }
 
-export default DomainFilter
+export default StringListHandler

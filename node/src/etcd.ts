@@ -213,6 +213,9 @@ export class Etcd {
     return this.rejectSelfStateInActions(ret, SelfState.error(null, "no valid server found:"+this.cfg.urls));
   }
 
+  public async list(key: string) : Promise<any> {
+    return this.get(key)
+  }
 
   public async get(key: string) : Promise<any> {
     let uri = this.buildKeyUri('/v2/keys', key)

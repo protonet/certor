@@ -213,14 +213,10 @@ export class Etcd {
     return this.rejectSelfStateInActions(ret, SelfState.error(null, "no valid server found:"+this.cfg.urls));
   }
 
-  public async list(key: string) : Promise<any> {
-    return this.get(key)
-  }
-
-  public async get(key: string) : Promise<any> {
+  private async keyAction(method: string,  key: string) : Promise<any> {
     let uri = this.buildKeyUri('/v2/keys', key)
     try {
-      let ret = await this.request("GET", uri)
+      let ret = await this.request(method, uri)
       // console.log("GET:", uri, ret)
       return Promise.resolve(JSON.parse(ret))
     } catch (err) {
@@ -230,6 +226,18 @@ export class Etcd {
       console.log("ERROR", err);
       return Promise.reject(err)
     }
+  }
+
+  public async delete(key: string) : Promise<any> {
+    return this.keyAction("DELETE", key)
+  }
+
+  public async list(key: string) : Promise<any> {
+    return this.keyAction("GET", key)
+  }
+
+  public async get(key: string) : Promise<any> {
+    return this.keyAction("GET", key)
   }
 
   public async request(method: string, url: string, options : any = {}) {

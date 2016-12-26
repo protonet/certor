@@ -48,6 +48,7 @@
     "globby": ">=5.0.0"
   },
   "dependencies": {
+    "ipaddress": ">=0.1.0",
     "es6-shim": ">=0.35.2",
     "@types/es6-shim": ">=0.31.32",
     "babel-polyfill": "^6.1.4",

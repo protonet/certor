@@ -213,34 +213,103 @@ export class Etcd {
     return this.rejectSelfStateInActions(ret, SelfState.error(null, "no valid server found:"+this.cfg.urls));
   }
 
-  private async keyAction(method: string,  key: string) : Promise<any> {
+  private async keyAction(method: string,  key: string, options : any = {}) : Promise<any> {
     let uri = this.buildKeyUri('/v2/keys', key)
+    let ret 
     try {
-      let ret = await this.request(method, uri)
+      ret = await this.request(method, uri, options)
       // console.log("GET:", uri, ret)
       return Promise.resolve(JSON.parse(ret))
     } catch (err) {
-      if (err.statusCode == 404) {
-        return Promise.resolve({})
-      } 
-      console.log("ERROR", err);
+      // if (err.statusCode == 404) {
+      // return Promise.resolve({})
+      // } 
+      // console.log("ERROR", uri, ret, method, options, err.statusCode);
       return Promise.reject(err)
     }
+  }
+
+  public async update(key: string, ttl: number) {
+    return this.keyAction("PUT", key, this.bodyParams({
+      "ttl": ttl,
+      "refresh": true,
+      "prevExist": true
+    }))
+  }
+
+  public async addQueue(key: string, val: string, ttl: number) {
+    return this.keyAction("POST", key, this.bodyParams({ "value": val, "ttl": ttl}))
+  }
+
+  private bodyParams(params: any) : any {
+    return {
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: this.urlParams(params)
+    }
+  }
+
+  public async mkdir(key: string) : Promise<any> {
+    return this.keyAction("PUT", key, this.bodyParams({ dir: true }))
   }
 
   public async delete(key: string) : Promise<any> {
     return this.keyAction("DELETE", key)
   }
 
-  public async list(key: string) : Promise<any> {
-    return this.keyAction("GET", key)
+  public async list(key: string, params: any = {}) : Promise<any> {
+    // console.log("list:", `${key}${this.urlParams(params, "?")}`)
+    try {
+      let list = await this.keyAction("GET", `${key}${this.urlParams(params, "?")}`)
+      if (!list['node']) {
+        return Promise.reject("list no node")
+      }
+      if (!list['node']['dir']) {
+        return Promise.reject("list not a directory")
+      }
+      if (!list['node']['nodes']) {
+        return Promise.resolve([]) // empty directory
+      }
+      return Promise.resolve(list['node']['nodes'])
+    } catch (e) {
+      return Promise.reject(e)
+    }
   }
 
-  public async get(key: string) : Promise<any> {
-    return this.keyAction("GET", key)
+  private urlParams(params: any, sep: string = "") {
+    let paramsStr = ""
+    for (let key in params) {
+      paramsStr +=`${sep}${key}=${params[key]}`
+      sep = "&"
+    }
+    return paramsStr
   }
 
-  public async request(method: string, url: string, options : any = {}) {
+  public async getRaw(key: string, params: any = {}, options: any = {}) : Promise<any> {
+    // console.log("get:", `${key}${this.urlParams(params, "?")}`)
+    return this.keyAction("GET", `${key}${this.urlParams(params, "?")}`, options)
+  }
+
+  public async getString(key: string, params: any = {}) : Promise<any> {
+      try {
+        let ret = await this.getRaw(key, params)
+        return Promise.resolve(ret['node']['value'])
+      } catch (err) {
+        return Promise.reject(err)
+      }
+  }
+
+  public async getJson(key: string, params: any = {}) : Promise<any> {
+      try {
+        let ret = await this.getRaw(key, params)
+        return Promise.resolve(JSON.parse(ret['node']['value']))
+      } catch (err) {
+        return Promise.reject(err)
+      }
+  }
+
+  public async request(method: string, url: string, options : any = {}) : Promise<any> {
     if (this.currentEtcd == null) {
       try { 
         let ret = await this.selfStat();
@@ -251,14 +320,14 @@ export class Etcd {
       }
     }
     try {
-       let ret = await this.rawRequest(method, `${this.currentEtcd}${url}`, options)
-       return Promise.resolve(ret)
+       return this.rawRequest(method, `${this.currentEtcd}${url}`, options)
     } catch (e) {
       if (e.name == "StatusCodeError") {
         return Promise.reject(e)
       }
+      console.log("Reconned:", typeof e, e.name, e)
       this.currentEtcd = null // reconnect etcd
-      this.request(method, url, options)
+      return this.request(method, url, options)
     }
   } 
 
@@ -269,19 +338,14 @@ export class Etcd {
          uri: url
       }
       options = Object.assign(my, options) 
+      // console.log(options)
       return rq(url, options)
   }
 
-  public async set(key: string, val: string) : Promise<any> {
+  public async setRaw(key: string, val: string) : Promise<any> {
     let uri = this.buildKeyUri('/v2/keys', key)
     try {
-      let ret = await this.request("PUT", uri, {
-         headers: {
-           "Content-Type": "application/x-www-form-urlencoded"
-         },
-         body: `value=${val}`,
-         json: false // Automatically stringifies the body to JSON 
-      })
+      let ret = await this.request("PUT", uri, this.bodyParams({ value: val }))
       return Promise.resolve(ret)
     } catch (err) {
       console.log("ERROR", err);
@@ -289,6 +353,9 @@ export class Etcd {
     }
   }
 
+  public async setJson(key: string, val: any) : Promise<any> {
+    return this.setRaw(key, JSON.stringify(val))
+  }
 
   public static async create(cfg: Config)  {
     return new Etcd(cfg)

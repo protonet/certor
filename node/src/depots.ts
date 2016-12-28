@@ -6,25 +6,28 @@ import StringListHandler from './string_list_handler'
 import DepotsCreators from './depots_creators'
 import * as path from 'path'
 import * as ipranges from './ipranges'
+import listAction from './list_action'
 
 export class Depots implements Command {
   key: string = "depots"
 
   private async delete(etc : etcd.Etcd, id: string) {
-     let ret = await etc.list("depots")
-      if (ret['node']) { 
-        let notRemoved = []
-        for (let node of ret['node']['nodes']) {
-          let pkey = path.basename(node['key'])
-          if (pkey == id) {
-            console.log("removing:", id, ":", node['key'])
-            await etc.delete(`depots/${id}?dir=true&recursive=true`)
-          } else {
-            notRemoved.push(pkey)
-          }
-        }
-        return Promise.resolve(notRemoved)
+    try {
+     let list = await etc.list("depots")
+     let notRemoved = []
+     for (let node of list) {
+       let pkey = path.basename(node['key'])
+       if (pkey == id) {
+          console.log("removing:", id, ":", node['key'])
+          await etc.delete(`depots/${id}?dir=true&recursive=true`)
+       } else {
+          notRemoved.push(pkey)
+       }
       }
+      return Promise.resolve(notRemoved)
+    } catch (e) {
+      return Promise.reject(e)
+    }
   }
 
   private async last_active_update(argv: string[], etc : etcd.Etcd, id: string) {
@@ -38,7 +41,7 @@ export class Depots implements Command {
         now = new Date()
       }
     //  console.log("last_active:update", id, now);
-      let ret = await etc.set(`depots/${id}/last_active`, now.toISOString())
+      let ret = await etc.setRaw(`depots/${id}/last_active`, now.toISOString())
     //  console.log("UPDATE:", ret)
       return Promise.resolve(now)
     } catch(e) {
@@ -48,34 +51,12 @@ export class Depots implements Command {
   private async last_active_get(etc : etcd.Etcd, id: string) {
     console.log("last_active:get", id);
     try {
-      let ret = await etc.get(`depots/${id}/last_active`)
-      // console.log("GET :",ret)
-      if (ret['node']) {
-        return Promise.resolve(new Date(ret['node']['value']))
-      } else {
+      let ret = await etc.getString(`depots/${id}/last_active`)
+    } catch(e) {
+      if (e.statusCode == 404) {
         return Promise.resolve(null)
       }
-    } catch(e) {
       return Promise.reject("get failed:"+e)
-    }
-  }
-  private async list(etc : etcd.Etcd) {
-    try {
-      let ret = await etc.list("depots")
-      if (ret['node']) {
-        let keys = []
-        for (let node of ret['node']['nodes']) {
-          let key = path.basename(node['key'])
-          keys.push(key)
-          console.log(key)
-        }
-        return Promise.resolve(keys)
-      } else {
-        return Promise.resolve([])
-      }
-    } catch (e) {
-      console.error("list failed")
-      return Promise.reject("list failed")
     }
   }
 
@@ -108,7 +89,7 @@ export class Depots implements Command {
     }
     let list_ofs = argv.indexOf("list")
     if (list_ofs >= 0) {
-      return this.list(etc)
+      return listAction("depots", etc)
     }
     let iprange_ofs = argv.indexOf("iprange")
     if (iprange_ofs >= 0) {

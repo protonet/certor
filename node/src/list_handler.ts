@@ -21,21 +21,18 @@ export class ListHandler<T> implements Command {
   }
   private async get(etcd: Etcd) {
     try {
-      let ret = await etcd.get(this.key)
-      if (ret['node']) {
-        // console.log(">>>>>NODE:", ret['node'])
-        return Promise.resolve(JSON.parse(ret['node']['value']))
-      } else {
-        // console.log(">>>>>EMPTY:", ret['node'])
-        return Promise.resolve([])
+      let ret = await etcd.getJson(this.key)
+      return ret
+    } catch (err) {
+      if (err.statusCode == 404) {
+          return Promise.resolve([])
       }
-    } catch (e) {
-      return Promise.reject(e) 
+      return Promise.reject(err) 
     }
   }
   private async set(etcd: Etcd, arr: T[]) : Promise<T[]> {
     try {
-      await etcd.set(this.key, JSON.stringify(arr));
+      await etcd.setJson(this.key, arr);
       return Promise.resolve(arr)
     } catch (err) {
       return Promise.resolve(null)

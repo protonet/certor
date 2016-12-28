@@ -19,6 +19,19 @@ export class DepotsIps implements Command {
     if (depot_id_ofs < 0 || !depot_id || depot_id.length == 0) {
       return Promise.reject(`need add --depot-id:${depot_id}`)
     }
+    let list_ofs = argv.indexOf("list")
+    if (list_ofs >= 0) {
+      try {
+        let list = await etc.list(`depots/${depot_id}/ips`)
+        let keys = list.map((l:any) => IPAddress.parse(l['key']))
+        return Promise.resolve(keys)
+      } catch (e) {
+        console.error("list failed")
+        return Promise.reject("list failed")
+      }
+    }
+
+
     let ip_ofs = argv.indexOf("--ip")
     if (ip_ofs < 0) {
       return Promise.reject(`need add --ip:${argv[ip_ofs+1]}`)

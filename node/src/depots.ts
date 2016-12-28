@@ -52,6 +52,7 @@ export class Depots implements Command {
     console.log("last_active:get", id);
     try {
       let ret = await etc.getString(`depots/${id}/last_active`)
+      return Promise.resolve(new Date(ret))
     } catch(e) {
       if (e.statusCode == 404) {
         return Promise.resolve(null)

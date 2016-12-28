@@ -58,7 +58,7 @@ class WaitMaster {
     }
     this.reqStop = true
     this.currentAliveTimeOut && clearTimeout(this.currentAliveTimeOut)
-    console.log("ReqStop:", this.me, this.aliveQueue)
+    // console.log("ReqStop:", this.me, this.aliveQueue)
     await this.etc.delete(this.aliveQueue)
     // this.currentWait && this.currentWait.cancel()
   }
@@ -70,7 +70,7 @@ class WaitMaster {
       this.stopAction()
       this.stopAction = null
     }
-    console.log("Stop:", this.me, this.aliveQueue, masterId)
+    // console.log("Stop:", this.me, this.aliveQueue, masterId)
   }
 
   private async checkAmIMaster() {
@@ -92,7 +92,7 @@ class WaitMaster {
             return Promise.resolve("im the master")
           }
           // this.masterId = masterId
-          console.log("Master:", this.me, this.aliveQueue)
+          // console.log("Master:", this.me, this.aliveQueue)
           this.master = true;
           this.stopAction = this.stopCb
           this.startCb()
@@ -117,13 +117,13 @@ class WaitMaster {
             params['waitIndex'] = waitIndex
           }
           let master = this.master
-          master && console.log("wait...", this.me, this.aliveQueue)
+          // master && console.log("wait...", this.me, this.aliveQueue)
           this.currentWait = this.etc.getRaw(this.key, params, {timeout: 3600000})
           let ret = await this.currentWait
-          master && console.log("await", this.me, this.aliveQueue)
+          // master && console.log("await", this.me, this.aliveQueue)
           waitIndex = ret['node']['modifiedIndex'] + 1
           ret = await this.checkAmIMaster()
-          master && console.log("postMaster:", ret, this.aliveQueue)
+          // master && console.log("postMaster:", ret, this.aliveQueue)
         } catch (e) {
           console.error(e)
         }

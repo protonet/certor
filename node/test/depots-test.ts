@@ -75,6 +75,7 @@ describe("depots", () => {
       now.toString(), '--creator', "CN=meno"], uuid), etcd)).toString(), "empty -2 list")
     now = await df.start(param(['last_active', "matsch", "update", '--creator', "CN=meno"], uuid), etcd)
     let get = await df.start(param(['last_active', "matsch", "get"], uuid), etcd)
+    console.log(now, get)
     assert.equal(now.toString(), get.toString(), `really now:${now}:${get}`)
   })
 

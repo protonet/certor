@@ -1,7 +1,7 @@
 
 import * as listHandler from './list_handler'
 import Command from './command'
-import * as etcd from './etcd'
+import * as etcd from 'promise-etcd'
 import * as config from './certor_config'
 
 import * as ipaddress from 'ipaddress'

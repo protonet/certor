@@ -1,9 +1,9 @@
-import Command from './command'
+import * as cmd from './command'
 
-class DnsZoneWriter implements Command {
+class DnsZoneWriter implements cmd.Command {
   key: string = "dns-zone-writer"
-  public start(argv: string[]) : Promise<any> {
-    return null 
+  public start(argv: string[]) : Promise<cmd.Result> {
+    return Promise.resolve(cmd.Error.text("Not Implemented", ))
   }
 
 }

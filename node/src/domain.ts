@@ -1,6 +1,6 @@
 
-import Command from './command'
-import * as etcd from './etcd'
+import * as cmd from './command'
+import * as etcd from 'promise-etcd'
 import * as config from './certor_config'
 import StringListHandler from './string_list_handler'
 import DepotsCreators from './depots_creators'
@@ -12,7 +12,7 @@ class Certificate {
 
 }
 class FileHandler {
-  public start(argv: string[], etc: etcd.Etcd) : Promise<any> {
+  public start(argv: string[], etc: etcd.Etcd) : Promise<cmd.Result> {
     return null
   }
   static create(key: string) : FileHandler {
@@ -34,7 +34,7 @@ export class DomainCreators extends StringListHandler {
 
 
 
-export class Domain implements Command {
+export class Domain implements cmd.Command {
   key: string = "domain"
 
   public async valid_domain_name(domain_name: string, etc: etcd.Etcd) : Promise<boolean> {
@@ -46,7 +46,7 @@ export class Domain implements Command {
   }
 
 
-  public async start(argv: string[], etc: etcd.Etcd = null) : Promise<any> {
+  public async start(argv: string[], etc: etcd.Etcd = null) : Promise<cmd.Result> {
     let wc = config.Certor.create(argv)
     etc = etc || await wc.etcd();
 
@@ -65,22 +65,22 @@ export class Domain implements Command {
     let domain_id = argv[domain_id_ofs + 1]
     if (domain_id_ofs < 0 || !domain_id || domain_id.length <= 0) {
       console.error("please set --domain-id")
-      return Promise.reject("please set --domain-id")
+      return Promise.resolve(cmd.Error.text("please set --domain-id"))
     }
     if (!(await this.valid_domain_name(domain_id, etc))) {
       console.error(`invalid domain_name:${domain_id}`)
-      return Promise.reject(`invalid domain_name:${domain_id}`)
+      return Promise.resolve(cmd.Error.text(`invalid domain_name:${domain_id}`))
     }
 
     let domain_creator_ofs = argv.indexOf("--domain-creator")
     let domain_creator = argv[domain_creator_ofs + 1]
     if (domain_creator_ofs < 0 || !domain_creator || domain_creator.length <= 0) {
       console.error("please set --domain-id")
-      return Promise.reject("please set --domain-id")
+      return Promise.resolve(cmd.Error.text("please set --domain-id"))
     }
     if (!(await this.valid_domain_creator(domain_creator, etc))) {
       console.error(`invalid domain_creator:${domain_creator}`)
-      return Promise.reject(`invalid domain_creator:${domain_creator}`)
+      return Promise.resolve(cmd.Error.text(`invalid domain_creator:${domain_creator}`))
     }
 
     // zone // domains.creators
@@ -101,7 +101,7 @@ export class Domain implements Command {
       }
     }
 
-    return Promise.reject("unknown")
+    return Promise.resolve(cmd.Error.text("unhandled"))
   }
 
 

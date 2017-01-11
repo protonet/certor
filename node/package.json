@@ -10,7 +10,7 @@
     "build:watch": "webpack --watch --debug --output-pathinfo --progress",
     "start": "nodemon ./dist/server.js server",
     "pretest": "npm run build",
-    "test": "mocha --require ./dist/etcd_daemon.js dist/test",
+    "test": "mocha --debug --require ./dist/etcd_daemon.js dist/test",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -w",
     "preversion": "npm test",
     "version": "npm run build && conventional-changelog -p angular -v -r 0 > CHANGELOG.md && git add -A .",
@@ -57,10 +57,7 @@
     "babel-preset-es2016": "^6.1.4",
     "@types/node-uuid": ">=0.0.28",
     "node-uuid": ">=1.4.7",
-    "@types/winston": ">=0.0.32",
-    "winston": ">=2.2.0",
-    "@types/request-promise": ">=4.1.33",
-    "request-promise": ">=4.1.1"
+    "promise-etcd": ">=1.0.0"
   },
   "publishConfig": {
     "tag": "next"

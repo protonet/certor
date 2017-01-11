@@ -7,7 +7,7 @@ import * as Uuid from 'node-uuid'
 import StringListHandler from '../src/string_list_handler'
 import * as config from '../src/certor_config'
 
-// import EtcdDaemon from './etcd_daemon'
+// import EtcdDaemon from 'promise-etcd_daemon'
 
 function param(arr: string[], uuid: string) : string[] {
   return arr.concat(['--etcd-cluster-id', uuid, '--etcd-url', "http://localhost:2379"])
@@ -38,19 +38,20 @@ describe("StringListHandler", () => {
     let df = new StringListHandler("slh");
     let wc = config.Certor.create(param([], uuid))
     let etcd = await wc.etcd();
-    assert.deepEqual([], await df.start(param(['get'], uuid), etcd))
-    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "add Error")
-    assert.deepEqual(['meno'], await df.start(param(['get'], uuid), etcd), "get Error")
+    // console.log(uuid)
+    assert.deepEqual([], (await df.start(param(['get'], uuid), etcd)).ok.asJson(), "get empty")
+    assert.deepEqual(['meno'], (await df.start(param(['add', 'meno'], uuid), etcd)).ok.asJson(), "add Error")
+    assert.deepEqual(['meno'], (await df.start(param(['get'], uuid), etcd)).ok.asJson(), "get Error")
   })
   it("add", async () => {
     let uuid = Uuid.v4().toString();
     let df = new StringListHandler("slh");
     let wc = config.Certor.create(param([], uuid))
     let etcd = await wc.etcd();
-    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "first add Error")
-    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "second add Error")
-    assert.deepEqual(['meno', 'murk'], (await df.start(param(['add', 'murk'], uuid), etcd)).sort(), "murk add Error")
-    assert.deepEqual(['meno', 'murk'], (await df.start(param(['get'], uuid), etcd)).sort(), "get-x Error")
+    assert.deepEqual(['meno'], (await df.start(param(['add', 'meno'], uuid), etcd)).ok.asJson(), "first add Error")
+    assert.deepEqual(['meno'], (await df.start(param(['add', 'meno'], uuid), etcd)).ok.asJson(), "second add Error")
+    assert.deepEqual(['meno', 'murk'], (await df.start(param(['add', 'murk'], uuid), etcd)).ok.asJson(), "murk add Error")
+    assert.deepEqual(['meno', 'murk'], (await df.start(param(['get'], uuid), etcd)).ok.asJson(), "get-x Error")
   })
 
    it("del", async () => {
@@ -58,11 +59,11 @@ describe("StringListHandler", () => {
     let df = new StringListHandler("slh");
     let wc = config.Certor.create(param([], uuid))
     let etcd = await wc.etcd();
-    assert.deepEqual(['meno'], await df.start(param(['add', 'meno'], uuid), etcd), "first add Error")
-    assert.deepEqual(['meno', 'murk'], (await df.start(param(['add', 'murk'], uuid), etcd)).sort(), "murk add Error")
-    assert.deepEqual(['murk'], (await df.start(param(['del', 'meno'], uuid), etcd)).sort(), "get Error")
-    assert.deepEqual([], (await df.start(param(['del', 'murk'], uuid), etcd)).sort(), "get Error")
-    assert.deepEqual([], await df.start(param(['get'], uuid), etcd))
+    assert.deepEqual(['meno'], (await df.start(param(['add', 'meno'], uuid), etcd)).ok.asJson(), "first add Error")
+    assert.deepEqual(['meno', 'murk'], (await df.start(param(['add', 'murk'], uuid), etcd)).ok.asJson().sort(), "murk add Error")
+    assert.deepEqual(['murk'], (await df.start(param(['del', 'meno'], uuid), etcd)).ok.asJson(), "get Error")
+    assert.deepEqual([], (await df.start(param(['del', 'murk'], uuid), etcd)).ok.asJson().sort(), "get Error")
+    assert.deepEqual([], (await df.start(param(['get'], uuid), etcd)).ok.asJson())
   })
 })
 

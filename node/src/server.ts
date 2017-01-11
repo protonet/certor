@@ -13,6 +13,7 @@ import DepotsCreator from './depots_creators'
 import Commander from './commander'
 
 let cmd = new Commander()
+
 cmd.register(new WebServiceServer())
 cmd.register(new DnsZoneWriter())
 cmd.register(new DnsZoneUpdater())
@@ -24,4 +25,5 @@ cmd.register(new DomainsFilter())
 cmd.register(new DepotsCreator())
 
 cmd.dispatch(process.argv, null)
+
 

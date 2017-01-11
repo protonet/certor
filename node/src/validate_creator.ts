@@ -1,5 +1,5 @@
 
-import * as etcd from './etcd'
+import * as etcd from 'promise-etcd'
 import DepotsCreators from './depots_creators'
 
 export default async function valid_creator(argv: string[], etc: etcd.Etcd, 
@@ -9,7 +9,7 @@ export default async function valid_creator(argv: string[], etc: etcd.Etcd,
       let creator = argv[creator_ofs+1]
       if (creator_ofs >= 0 && creator && creator.length > 0) {
         let creators = await (new DepotsCreators()).start(['get'], etc)
-        if (creators.find((c:string)=>c==creator)) {
+        if (creators.ok.asJson().find((c:string)=>c==creator)) {
           return cb(id)
         }
       } 

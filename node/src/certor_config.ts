@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import * as etcd from './etcd'
+import * as etcd from 'promise-etcd'
 
 class Key {
   ca: string = null;

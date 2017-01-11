@@ -1,9 +1,11 @@
-import Command from './command'
+import * as cmd from './command'
 import * as config from './certor_config'
 
 import * as request from 'request-promise'
 
-import Etcd from './etcd'
+import * as petcd from 'promise-etcd'
+
+import * as listResult from './list_result'
 
 export interface Actor<T> {
   adder(key: string) : (arr: string[]) => T[];
@@ -12,44 +14,57 @@ export interface Actor<T> {
   toString(t: T) : string;
 }
 
-export class ListHandler<T> implements Command {
+
+export class ListHandler<T> implements cmd.Command {
   key: string
   actor: Actor<T>
   constructor(key: string, actor: Actor<T>) {
     this.key = key;
     this.actor = actor
   }
-  private async get(etcd: Etcd) {
-    try {
-      let ret = await etcd.getJson(this.key)
-      return ret
-    } catch (err) {
-      if (err.statusCode == 404) {
-          return Promise.resolve([])
+
+  private async get(etcd: petcd.Etcd) {
+    let ret = await etcd.getJson(this.key)
+    if (ret.isErr()) {
+      if (ret.err.err.statusErr.statusCode == 404) {
+        return Promise.resolve(petcd.EtcValue.value<T[]>([]))
       }
-      return Promise.reject(err) 
     }
-  }
-  private async set(etcd: Etcd, arr: T[]) : Promise<T[]> {
-    try {
-      await etcd.setJson(this.key, arr);
-      return Promise.resolve(arr)
-    } catch (err) {
-      return Promise.resolve(null)
-    }
-  }
-  private async modify(etcd: Etcd, handler: (arr: string[])=>T[]) : Promise<T[]> {
-    let arr = await this.get(etcd)
-    // console.log("MODIFY:", arr)
-    arr = arr || []
-    let post = handler(arr)
-    if (post) {
-      post = await this.set(etcd, post) 
-    }
-    return Promise.resolve(post || arr)
+    return ret;
   }
 
-  public async start(argv: string[], etcd: Etcd = null) {
+  private async set(etcd: petcd.Etcd, arr: T[]) : Promise<petcd.EtcValue<T[]>> {
+    let ret = await etcd.setJson(this.key, arr);
+    if (ret.isErr()) {
+      // console.log("SET ERR", this.key, arr, ret.isErr())
+      return Promise.resolve(petcd.EtcValue.error<T[]>(ret))
+    }
+    // console.log("SET OK", this.key, arr, ret.isErr())
+    return Promise.resolve(petcd.EtcValue.value<T[]>(arr))
+  }
+
+  private async modify(etcd: petcd.Etcd, handler: (arr: string[])=>T[]) : Promise<petcd.EtcValue<T[]>> {
+    let arr = await this.get(etcd)
+    if (arr.isErr()) {
+      return Promise.resolve(petcd.EtcValue.error<T[]>(arr))
+    }
+    // console.log("MODIFY:", arr)
+    arr.value = arr.value || []
+    let post = handler(arr.value)
+    if (post) {
+       //console.log("POST", post)
+      //  console.log("PRE-MOD", this.key, arr)
+       let ret = await this.set(etcd, post) 
+       if (ret.isErr()) {
+          // console.log("ERR MOD", this.key, arr, ret.err)
+         return Promise.resolve(petcd.EtcValue.error<T[]>(ret))
+       }
+    }
+    //console.log(arr, post)
+    return Promise.resolve(petcd.EtcValue.value(post || arr.value))
+  }
+
+  public async start(argv: string[], etcd: petcd.Etcd = null) : Promise<cmd.Result> {
     let wc = config.Certor.create(argv)
     etcd = etcd || await wc.etcd();
     // console.log(etcd);
@@ -59,21 +74,30 @@ export class ListHandler<T> implements Command {
     let add_ofs = argv.indexOf("add")
     if (add_ofs >= 0) {
       let arr = await this.modify(etcd, this.actor.adder(argv[add_ofs+1]))
-      arr && arr.forEach((domain:any) => console.log(this.actor.toString(domain)))
-      return Promise.resolve(arr)
+      // console.log("ADD", arr, argv[add_ofs+1])
+      if (arr.isErr()) {
+        return Promise.resolve(listResult.EtcdListError<T>(arr))
+      }
+      // arr.value.forEach((domain:any) => console.log(this.actor.toString(domain)))
+      return Promise.resolve(listResult.EtcdListResult<T>(arr))
     }
     let del_ofs = argv.indexOf("del")
     if (del_ofs >= 0) {
-        let arr = await this.modify(etcd, this.actor.deler(argv[del_ofs+1]))
-      arr && arr.forEach((domain:any) => console.log(this.actor.toString(domain)))
-      return Promise.resolve(arr)
+      let arr = await this.modify(etcd, this.actor.deler(argv[del_ofs+1]))
+      if (arr.isErr()) {
+        return Promise.resolve(listResult.EtcdListError<T>(arr))
+      }
+      // arr.value.forEach((domain:any) => console.log(this.actor.toString(domain)))
+      return Promise.resolve(listResult.EtcdListResult<T>(arr))
     }
     if (argv.indexOf("get") >= 0) {
-    // console.log("start-2")
-      let arr = this.actor.geter(await this.get(etcd))
-      arr && arr.forEach((domain:T) => console.log(this.actor.toString(domain)))
-      return Promise.resolve(arr)
+      let ret = await this.get(etcd)
+      if (ret.isErr()) {
+        return Promise.resolve(listResult.EtcdError(ret))
+      }
+      return Promise.resolve(listResult.EtcdListResult(ret))
     }
+    debugger
     return null
   }
 }

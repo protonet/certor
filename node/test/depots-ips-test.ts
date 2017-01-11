@@ -9,7 +9,7 @@ import * as Uuid from 'node-uuid'
 import DepotsIps from '../src/depots_ips'
 import DepotsCreators from '../src/depots_creators'
 
-// import EtcdDaemon from './etcd_daemon'
+// import EtcdDaemon from 'promise-etcd_daemon'
 
 import * as config from '../src/certor_config'
 

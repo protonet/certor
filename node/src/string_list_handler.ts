@@ -26,6 +26,14 @@ export class StringActor implements listHandler.Actor<string> {
     return t
   }
 
+  public validate(t: string) : listHandler.Valid<string> {
+    return {
+      isValid : () => { return true },
+      value : t,
+      error : null
+    }
+  }
+
 }
 
 export class StringListHandler extends listHandler.ListHandler<string> {

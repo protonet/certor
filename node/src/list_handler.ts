@@ -7,11 +7,18 @@ import * as petcd from 'promise-etcd'
 
 import * as listResult from './list_result'
 
+export interface Valid<T> {
+  isValid() : boolean
+  value: T
+  error?: string
+}
+
 export interface Actor<T> {
   adder(key: string) : (arr: string[]) => T[];
   deler(key: string) : (arr: string[]) => T[];
   geter(arr: string[]) : T[];
   toString(t: T) : string;
+  validate: (key: T) => Valid<T>
 }
 
 
@@ -34,6 +41,10 @@ export class ListHandler<T> implements cmd.Command {
   }
 
   private async set(etcd: petcd.Etcd, arr: T[]) : Promise<petcd.EtcValue<T[]>> {
+    let valids = arr.map((i) => this.actor.validate(i)).filter((i) => !i.isValid())
+    if (valids.length > 0) {
+      return Promise.resolve(petcd.EtcValue.error<T[]>(petcd.EtcResponse.error(valids)))
+    }
     let ret = await etcd.setJson(this.key, arr);
     if (ret.isErr()) {
       // console.log("SET ERR", this.key, arr, ret.isErr())
@@ -97,8 +108,7 @@ export class ListHandler<T> implements cmd.Command {
       }
       return Promise.resolve(listResult.EtcdListResult(ret))
     }
-    debugger
-    return null
+    return Promise.resolve(cmd.Error.text("falling through"))
   }
 }
 

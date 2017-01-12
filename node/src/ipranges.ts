@@ -72,6 +72,10 @@ export class IpRangesActor implements listHandler.Actor<IpRange> {
     return t.toString()
   }
 
+  public validate(t: IpRange) : listHandler.Valid<IpRange> {
+    return null
+  }
+
 }
 
 export class IpRanges extends listHandler.ListHandler<IpRange> {

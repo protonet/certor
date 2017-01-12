@@ -34,11 +34,11 @@ export class EtcdListResultValue<T> implements cmd.ResValue {
     this.result = e.value
   }
   public asText() : string {
-    let ret = ""
-    for (let i in this.result) {
-      ret += i.toString() + "\n"
-    }
-    return ret;
+    // let ret = ""
+    // for (let i in this.result) {
+    //   ret += this.result[i].toString() + "\n"
+    // }
+    return this.result.join("\n");
   }
   public asJson() : any {
     return this.result
@@ -51,6 +51,7 @@ export class EtcdResultValue<T> implements cmd.ResValue {
     this.result = e.value
   }
   public asText() : string {
+    // console.log("1>>>>>", this.result)
     return this.result.toString();
   }
   public asJson() : any {
@@ -60,7 +61,9 @@ export class EtcdResultValue<T> implements cmd.ResValue {
 
 
 export function EtcdListResult<T>(v: petcd.EtcValue<T[]>) {
-  return new cmd.Ok(new EtcdListResultValue<T>(v))
+  let ret = new cmd.Ok(new EtcdListResultValue<T>(v))
+  // console.log(`[${ret.ok.asText()}]`)
+  return ret
 }
 
 export function EtcdResult<T>(v: petcd.EtcValue<T>) {
@@ -85,9 +88,10 @@ export class ListResultValue<T> implements cmd.ResValue {
     this.result = e
   }
   public asText() : string {
+    // console.log("2>>>>>", this.result)
     let ret = ""
     for (let i in this.result) {
-      ret += i.toString() + "\n"
+      ret += this.result[i].toString() + "\n"
     }
     return ret;
   }

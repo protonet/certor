@@ -21,7 +21,10 @@ export class Error implements Result {
   err: ResValue 
   public static text(txt: string) {
     return new Error({
-      asText: () => { return txt },
+      asText: () => { 
+        // console.log("X>>>>>")
+        return txt 
+      },
       asJson: () => { return txt }
     })
   }

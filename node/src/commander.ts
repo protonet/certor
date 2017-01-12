@@ -13,18 +13,22 @@ export class Commander {
           ('a' <= arg[0] && arg[0] <= 'z')) {
         this.commands.forEach(async (cmd) => {
           if (cmd.key == arg) {
+            // debugger
             let ret = await cmd.start(argv)
-            let fnErrName = ret.err.asText
-            let fnOkName = ret.ok.asText
-            if (argv.indexOf("--json")) {
-              fnErrName = () => JSON.stringify(ret.err.asJson())
-              fnOkName = () => JSON.stringify(ret.ok.asJson())
-            }
             if (ret.isErr()) {
-              console.error(fnOkName())
+              let fnErrName = ret.err.asText
+              if (argv.indexOf("--json")) {
+                fnErrName = () => JSON.stringify(ret.err.asJson())
+              }
+              console.error(fnErrName())
               process.exit(42)
             } else {
-              console.log(fnErrName())
+              let fnOkName = ret.ok.asText.bind(ret.ok)
+              if (argv.indexOf("--json") >= 0) {
+                // console.log(">>>>json", argv)
+                fnOkName = () => JSON.stringify(ret.ok.asJson())
+              }
+              console.log(fnOkName())
               process.exit(0)
             }
            }

@@ -43,7 +43,7 @@
     "rimraf": ">=2.5.2",
     "source-map-support": ">=0.4.1",
     "tslint": ">=3.11.0",
-    "typescript": "2.1.1",
+    "typescript": "=2.1.1",
     "webpack": ">=1.14.0",
     "globby": ">=5.0.0"
   },
@@ -57,7 +57,7 @@
     "babel-preset-es2016": "^6.1.4",
     "@types/node-uuid": ">=0.0.28",
     "node-uuid": ">=1.4.7",
-    "promise-etcd": ">=1.0.0"
+    "promise-etcd": ">=1.0.2"
   },
   "publishConfig": {
     "tag": "next"

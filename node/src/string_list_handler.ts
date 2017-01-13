@@ -10,6 +10,12 @@ export class StringActor implements listHandler.Actor<string> {
       return null;
     }
   }
+  public fromArgs(argv: string[], ofs: number) : Promise<listHandler.Valid<string>> {
+    return Promise.resolve({
+      isValid : () => { return true },
+      value : argv[ofs]
+    })
+  }
   public deler(key: string) : (arr: string[]) => string[] {
     return (arr: string[]) : string[] => {
       let post = arr.filter((l) => l!=key)

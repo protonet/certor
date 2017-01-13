@@ -9,14 +9,15 @@ import * as listResult from './list_result'
 
 export interface Valid<T> {
   isValid() : boolean
-  value: T
+  value?: T
   error?: string
 }
 
 export interface Actor<T> {
-  adder(key: string) : (arr: string[]) => T[];
-  deler(key: string) : (arr: string[]) => T[];
-  geter(arr: string[]) : T[];
+  adder(key: T) : (arr: T[]) => T[];
+  deler(key: T) : (arr: T[]) => T[];
+  fromArgs(argv: string[], ofs: number) : Promise<Valid<T>>
+  geter(arr: T[]) : T[];
   toString(t: T) : string;
   validate: (key: T) => Valid<T>
 }
@@ -54,7 +55,7 @@ export class ListHandler<T> implements cmd.Command {
     return Promise.resolve(petcd.EtcValue.value<T[]>(arr))
   }
 
-  private async modify(etcd: petcd.Etcd, handler: (arr: string[])=>T[]) : Promise<petcd.EtcValue<T[]>> {
+  private async modify(etcd: petcd.Etcd, handler: (arr: T[])=>T[]) : Promise<petcd.EtcValue<T[]>> {
     let arr = await this.get(etcd)
     if (arr.isErr()) {
       return Promise.resolve(petcd.EtcValue.error<T[]>(arr))
@@ -84,7 +85,11 @@ export class ListHandler<T> implements cmd.Command {
     //   // console.log("start-1", argv)
     let add_ofs = argv.indexOf("add")
     if (add_ofs >= 0) {
-      let arr = await this.modify(etcd, this.actor.adder(argv[add_ofs+1]))
+      let from = await this.actor.fromArgs(argv, add_ofs+1)
+      if (!from.isValid()) {
+        return Promise.resolve(cmd.Error.text(from.error))
+      }
+      let arr = await this.modify(etcd, this.actor.adder(from.value))
       // console.log("ADD", arr, argv[add_ofs+1])
       if (arr.isErr()) {
         return Promise.resolve(listResult.EtcdListError<T>(arr))
@@ -94,7 +99,11 @@ export class ListHandler<T> implements cmd.Command {
     }
     let del_ofs = argv.indexOf("del")
     if (del_ofs >= 0) {
-      let arr = await this.modify(etcd, this.actor.deler(argv[del_ofs+1]))
+      let from = await this.actor.fromArgs(argv, del_ofs+1)
+      if (!from.isValid()) {
+        return Promise.resolve(cmd.Error.text(from.error))
+      }
+      let arr = await this.modify(etcd, this.actor.deler(from.value))
       if (arr.isErr()) {
         return Promise.resolve(listResult.EtcdListError<T>(arr))
       }

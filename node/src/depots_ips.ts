@@ -67,13 +67,13 @@ export class DepotsIps implements cmd.Command {
   public static async valid_creators_and_iprange(argv: string[], etc: etcd.Etcd, id: string, 
     ip: IPAddress, cb: ()=>Promise<any>) {
     return Depots.valid_creator(argv, etc, id, async (id: string) => {
-        let iprs = await (new ipranges.IpRanges(`depots/${id}/ipranges`)).start(['get'], etc)
-        if (iprs.isErr()) {
-          return Promise.resolve()
-        }
-        if (ipranges.IpRanges.includes(ip, iprs.ok.asJson())) {
-          return cb()
-        }
+        // let iprs = await (new ipranges.IpRanges(`depots/${id}/ipranges`)).start(['get'], etc)
+        // if (iprs.isErr()) {
+        //   return Promise.resolve()
+        // }
+        // if (ipranges.IpRanges.includes(ip, iprs.ok.asJson())) {
+        //   return cb()
+        // }
         throw new Error(`ip not in range:${ip.to_s()}`)
     })
   }

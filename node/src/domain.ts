@@ -46,6 +46,19 @@ export class Domain implements cmd.Command {
   }
 
 
+  public static async getDomain(argv: string[]) {
+    let domain_id_ofs = argv.indexOf("--domain")
+    let domain_id = argv[domain_id_ofs + 1]
+    if (domain_id_ofs < 0 || !domain_id || domain_id.length <= 0) {
+      // console.error("please set --domain")
+      return Promise.resolve(cmd.Error.text("please set --domain"))
+    }
+    return Promise.resolve(new cmd.Ok({
+      asText: () => { return domain_id },
+      asJson: () => { return domain_id }
+    }))
+  }
+
   public async start(argv: string[], etc: etcd.Etcd = null) : Promise<cmd.Result> {
     let wc = config.Certor.create(argv)
     etc = etc || await wc.etcd();
@@ -61,13 +74,11 @@ export class Domain implements cmd.Command {
       return listAction("domains", etc)
     }
     
-    let domain_id_ofs = argv.indexOf("--domain-id")
-    let domain_id = argv[domain_id_ofs + 1]
-    if (domain_id_ofs < 0 || !domain_id || domain_id.length <= 0) {
-      console.error("please set --domain-id")
-      return Promise.resolve(cmd.Error.text("please set --domain-id"))
+    let domain_id = await Domain.getDomain(argv) 
+    if (domain_id.isErr()) {
+      return domain_id
     }
-    if (!(await this.valid_domain_name(domain_id, etc))) {
+    if (!(await this.valid_domain_name(domain_id.ok.asJson(), etc))) {
       console.error(`invalid domain_name:${domain_id}`)
       return Promise.resolve(cmd.Error.text(`invalid domain_name:${domain_id}`))
     }

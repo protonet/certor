@@ -96,10 +96,10 @@ export class Depots implements cmd.Command {
         console.error("iprange need's an id")
         return Promise.resolve(cmd.Error.text("need an id"))
       }
-      return Depots.valid_creator(argv, etc, id, (id:string) => {
-        let slh = new ipranges.IpRanges(`depots/${id}/ipranges`)
-        return slh.start(argv, etc)
-      })
+      // return Depots.valid_creator(argv, etc, id, (id:string) => {
+      //   let slh = new ipranges.IpRanges(`depots/${id}/ipranges`)
+      //   return slh.start(argv, etc)
+      // })
     }
     return Promise.resolve(cmd.Error.text("unhandeled"))
   }

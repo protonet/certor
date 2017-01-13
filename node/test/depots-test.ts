@@ -29,9 +29,9 @@ function param(arr: string[], uuid: string): string[] {
   return arr.concat(['--etcd-cluster-id', uuid, '--etcd-url', "http://localhost:2379"])
 }
 
-function toS(ip: ipranges.IpRange[]) : string[] {
-  return ip.map((ipa) => ipa.toString())
-}
+// function toS(ip: ipranges.IpRange[]) : string[] {
+//   return ip.map((ipa) => ipa.toString())
+// }
 
 // function mochaAsync(fn : () => void ) : (done:any) => void {
 //     return async (done: () => void) : Promise<any> => {

@@ -52,6 +52,8 @@
     "ipaddress": ">=0.1.0",
     "es6-shim": ">=0.35.2",
     "@types/es6-shim": ">=0.31.32",
+    "fs-promise": ">=1.0.0",
+    "@types/fs-promise": ">=1.0.1",
     "babel-polyfill": "^6.1.4",
     "babel-preset-es2015": "^6.1.4",
     "babel-preset-es2016": "^6.1.4",

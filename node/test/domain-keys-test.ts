@@ -31,6 +31,8 @@ describe("DomainKeys", () => {
       fs.writeFileSync(zsk_fname, "zsk-file")
       assert.deepEqual("zsk-file", (await df.start(param(['set', `@${zsk_fname}`, '--domain', 'test'], uuid), etcd)).ok.asJson(), "add without domain()")
 
+      fs.unlinkSync(zsk_fname)
+
       assert.deepEqual("zsk-file", (await df.start(param(['get', '--domain', 'test'], uuid), etcd)).ok.asJson(), "add without domain()")
 
       assert.deepEqual("zsk-file", (await df.start(param(['del', '--domain', 'test'], uuid), etcd)).ok.asJson(), "add without domain()")

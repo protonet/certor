@@ -30,7 +30,7 @@ module.exports = [
   externals: node_modules,
   devtool: 'source-map',
   resolve: {
-    extensions: ['', '.ts', '.webpack.js', '.web.js', '.js']
+    extensions: ['.ts', '.webpack.js', '.web.js', '.js']
   }
 },
 {
@@ -45,15 +45,12 @@ module.exports = [
         test: /etcd_daemon\.ts$/,
         loader: 'ts-loader'
       }
-    ],
-    include: [
-      path.resolve(__dirname, "test/etcd_daemon.ts")
     ]
   },
   externals: node_modules,
   devtool: 'source-map',
   resolve: {
-    extensions: ['', '.ts']
+    extensions: ['.ts']
   }
 },
 {
@@ -70,16 +67,11 @@ module.exports = [
         test: /\.ts$/,
         loader: 'ts-loader'
       }
-    ],
-    exclude: [
-      {
-        test: /etcd_daemon\.ts$/
-      }
     ]
   },
   externals: node_modules,
   devtool: 'source-map',
   resolve: {
-    extensions: ['', '.ts', '.webpack.js', '.web.js', '.js']
+    extensions: ['.ts', '.webpack.js', '.web.js', '.js']
   }
 }];

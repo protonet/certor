@@ -10,11 +10,10 @@ import WebActor from './web_actor'
 import * as cert from './cert'
 import * as depot from './depot'
 import * as ipDepot from './ip_depot'
+import * as cmd from '../command'
+import * as utils from '../utils'
 
-import Command from "../command"
-
-
-class WebServiceServer implements Command {
+class WebServiceServer implements cmd.Command {
   key: string = "server" ;
  
   webActors: {[id:string]: WebActor } = {}
@@ -31,14 +30,18 @@ class WebServiceServer implements Command {
     console.log(`Started redirectPort on ${cfg.redirectPort} -> ${cfg.redirectUrl}`)
   }
 
-  public start(argv: string[]) : Promise<any> {
+  public start(argv: string[]) : Promise<cmd.Result> {
     let cfg = config.Certor.create(argv)
     if (cfg.redirectPort > 0) {
       this.redirectServer(cfg);
     }    
-
     this.serviceServer(cfg);
-    return null
+    if (argv.indexOf("--background") >= 0) {
+      return Promise.resolve(utils.okValue("Server started pushed to background"))
+    }
+    return new Promise((res, rej) => {
+      setTimeout(() => {}, 3600000)
+    })
   }
 
   private register(wa: WebActor) {

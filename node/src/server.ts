@@ -9,6 +9,7 @@
 // import Certor from './certor'
 import DomainsFilter from './domains_filter'
 import DepotsCreator from './depots_creators'
+import WebServiceServer from './web_server_service/web_server_service'
 
 import Commander from './commander'
 
@@ -23,6 +24,7 @@ let cmd = new Commander()
 // cmd.register(new Certor())
 cmd.register(new DomainsFilter())
 cmd.register(new DepotsCreator())
+cmd.register(new WebServiceServer())
 
 cmd.dispatch(process.argv, null)
 
